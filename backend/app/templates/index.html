@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SJ 노래방 — 곡 목록</title>
+<style>
+:root{--bg:#090b18;--panel:#151a2d;--line:#303a59;--text:#f4f6ff;--muted:#9ca9c8;--cyan:#74f4ed;--pink:#ff759f}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 85% -10%,#26315c 0%,transparent 35%),var(--bg);color:var(--text);font:16px/1.5 system-ui,"Yu Gothic","Malgun Gothic",sans-serif}
+.wrap{width:min(760px,100%);margin:0 auto;padding:26px 20px 60px}
+.brand{display:inline-flex;align-items:center;gap:12px;color:var(--text);text-decoration:none}
+.brand-mark{display:grid;place-items:center;width:52px;height:52px;border:2px solid var(--cyan);border-radius:13px;color:var(--cyan);font-size:1.35rem;font-weight:900;letter-spacing:-.06em;box-shadow:0 0 22px #74f4ed30,inset 0 0 14px #74f4ed20}
+.brand-name{font-size:.76rem;color:var(--muted);letter-spacing:.2em;font-weight:800}
+.hero{margin:34px 0 25px}
+.eyebrow{color:var(--cyan);font-size:.72rem;font-weight:800;letter-spacing:.2em}
+h1{font-size:clamp(1.7rem,5vw,2.4rem);line-height:1.2;margin:9px 0 8px}
+.hint{color:var(--muted);font-size:.88rem;margin:0}
+.add{display:flex;align-items:center;justify-content:space-between;gap:15px;min-height:96px;background:linear-gradient(110deg,#273c65,#1b2340 70%);border:1px solid #5b8ac5;border-radius:18px;padding:18px 22px;color:var(--text);text-decoration:none;box-shadow:0 12px 35px #0004}
+.add:hover,.add:focus-visible{border-color:var(--cyan);background:linear-gradient(110deg,#31527b,#20294c 70%)}
+.add strong{display:block;font-size:1.1rem}
+.add small{display:block;color:#bbd0ec;font-size:.78rem;margin-top:4px}
+.add-icon{display:grid;place-items:center;flex:0 0 auto;width:42px;height:42px;border-radius:12px;background:var(--cyan);color:#0a1730}
+.add-icon svg{display:block}
+.list-head{display:flex;align-items:end;justify-content:space-between;margin:33px 0 13px;border-bottom:1px solid var(--line);padding-bottom:10px}
+h2{font-size:1.08rem;margin:0}.count{color:var(--cyan);font-variant-numeric:tabular-nums}
+.list{display:grid;gap:9px}
+.song{display:flex;align-items:center;gap:14px;min-height:74px;padding:12px 15px;background:var(--panel);border:1px solid var(--line);border-radius:13px;color:var(--text);text-decoration:none}
+.song:hover,.song:focus-visible{border-color:var(--pink);background:#202642}
+.number{flex:0 0 33px;color:var(--cyan);font-size:.84rem;font-weight:800;font-variant-numeric:tabular-nums}
+.song-body{min-width:0;flex:1}.song-title{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.song-meta{display:block;margin-top:3px;color:var(--muted);font-size:.76rem}
+.arrow{color:var(--pink);font-size:1.4rem}
+.empty{padding:30px 16px;text-align:center;border:1px dashed var(--line);border-radius:13px;color:var(--muted);font-size:.88rem}
+@media(max-width:500px){.wrap{padding:19px 15px 45px}.hero{margin-top:27px}.add{padding:16px}.song{gap:10px}}
+</style>
+<main class="wrap">
+  <a class="brand" href="/" aria-label="SJ 곡 목록"><span class="brand-mark">SJ</span><span class="brand-name">KARAOKE<br>SONG LIST</span></a>
+  <header class="hero">
+    <div class="eyebrow">SING YOUR SONG</div>
+    <h1>오늘은 어떤 곡을 부를까요?</h1>
+    <p class="hint">곡을 선택하거나 새 음원을 추가하세요.</p>
+  </header>
+  <a class="add" href="/new"><span><strong>새 곡 추가</strong><small>WAV·MP4·MP3 파일로 시작</small></span><span class="add-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></a>
+  <section aria-labelledby="saved-title">
+    <div class="list-head"><h2 id="saved-title">저장된 곡</h2><span class="count">{{ songs | length }}곡</span></div>
+    {% if songs %}
+    <div class="list">
+      {% for s in songs %}
+      <a class="song" href="/song/{{ s.id }}">
+        <span class="number">{{ '%02d' | format(loop.index) }}</span>
+        <span class="song-body"><span class="song-title">{{ s.title }}</span><span class="song-meta">{{ s.lines }}줄{% if s.durationSec %} · {{ (s.durationSec // 60) | int }}:{{ '%02d' | format(s.durationSec % 60 | int) }}{% endif %}</span></span>
+        <span class="arrow" aria-hidden="true">›</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">아직 저장된 곡이 없습니다. 위에서 첫 곡을 추가해 보세요.</p>
+    {% endif %}
+  </section>
+</main>
+</html>

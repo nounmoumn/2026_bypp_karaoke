@@ -1,0 +1,64 @@
+:root {
+  font-family: "Pretendard", "Noto Sans KR", "Noto Sans JP", system-ui, sans-serif;
+  color: #f7f4ef;
+  background: #08090d;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.app-shell { min-height: 100vh; max-width: 1260px; margin: auto; padding: 0 36px 40px; }
+.topbar { height: 84px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #24262d; }
+.brand { font-size: 13px; font-weight: 800; letter-spacing: .18em; color: #eee; }
+.brand span { color: #edbe75; padding: 0 5px; }
+.demo-badge { color: #e4c999; border: 1px solid #68553a; border-radius: 100px; padding: 6px 11px; font-size: 12px; text-decoration: none; }
+.song-heading { text-align: center; padding: 42px 0 30px; }
+.eyebrow { color: #c5a778; letter-spacing: .18em; text-transform: uppercase; font-size: 12px; font-weight: 700; margin: 0 0 8px; }
+h1 { font-size: clamp(26px, 4vw, 42px); line-height: 1.2; margin: 0; font-weight: 730; letter-spacing: -.035em; }
+.subcopy { color: #979aa6; font-size: 14px; margin: 12px 0 0; }
+.stage { min-height: 420px; position: relative; display: flex; justify-content: center; align-items: center; text-align: center; overflow: hidden; border: 1px solid #292b34; border-radius: 20px; background: radial-gradient(ellipse at 50% 70%, #242030 0, #14131c 34%, #0b0c12 72%); }
+.stage-glow { position: absolute; width: 380px; height: 280px; border-radius: 50%; background: #e3ad6b; filter: blur(110px); opacity: .11; bottom: -170px; pointer-events: none; }
+.lyric-content { position: relative; width: 100%; max-width: 1040px; padding: 45px 28px; }
+.current-line { font-size: clamp(27px, 4.5vw, 58px); line-height: 1.38; font-weight: 800; letter-spacing: -.035em; color: #fff4dc; text-shadow: 0 0 30px #a876426e; min-height: 1.5em; overflow-wrap: anywhere; }
+.current-line .dual-line { gap: 10px; }
+.jp-line { font-size: .58em; color: #d2bd9e; font-weight: 540; }
+.dual-line { display: flex; flex-direction: column; }
+.rest-line { color: #b99b6d; font-size: 48px; min-height: 1.5em; }
+.next-line { color: #a4a2aa; font-size: clamp(16px, 2.1vw, 25px); line-height: 1.4; min-height: 2.5em; margin-top: 32px; overflow-wrap: anywhere; }
+.next-line .dual-line { gap: 3px; }
+.controls { max-width: 760px; margin: 26px auto 0; }
+.progress-row { display: flex; align-items: center; gap: 15px; font-size: 13px; color: #bbbcc4; font-variant-numeric: tabular-nums; }
+.progress-row input { flex: 1; accent-color: #e7b970; cursor: pointer; }
+.transport-row { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 20px; }
+.transport-row button { border: 1px solid #464750; background: #1b1c24; color: #e8e7e9; border-radius: 11px; padding: 12px 18px; min-width: 92px; }
+.transport-row button:hover { background: #292a34; }
+.transport-row .play-button { min-width: 132px; background: #eac185; color: #18120d; border: 0; font-weight: 800; }
+.transport-row .play-button:hover { background: #f4d29f; }
+.play-error { color: #ffb5a9; text-align: center; }
+.mode-panel { max-width: 760px; margin: 28px auto 0; padding: 18px 20px; border: 1px solid #282a32; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #d8d5d1; font-size: 14px; }
+.mode-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.mode-options button { color: #acadb5; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 12px; }
+.mode-options button.selected { color: #f7d29a; border-color: #66543c; background: #30291f; }
+.mode-options button:hover { color: #fff; }
+.error-card, .loading { max-width: 620px; margin: 100px auto; text-align: center; color: #c4c3c9; }
+.error-card h1 { font-size: 28px; color: #fff; }
+button:focus-visible, input:focus-visible { outline: 2px solid #f3cb8f; outline-offset: 3px; }
+
+@media (max-width: 650px) {
+  .app-shell { padding: 0 16px 28px; }
+  .topbar { height: 66px; }
+  .brand { font-size: 10px; }
+  .demo-badge { font-size: 10px; padding: 5px 8px; }
+  .song-heading { padding: 30px 0 22px; }
+  .subcopy { max-width: 280px; margin: 10px auto 0; line-height: 1.45; }
+  .stage { min-height: 390px; border-radius: 14px; }
+  .lyric-content { padding: 30px 16px; }
+  .next-line { margin-top: 28px; }
+  .mode-panel { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .mode-options { width: 100%; }
+  .mode-options button { flex: 1; padding: 8px 6px; font-size: 12px; }
+}

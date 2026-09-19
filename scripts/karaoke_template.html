@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>__TITLE__ — 노래방</title>
+<style>
+:root{--bg:#07070c;--panel:#14141d;--line:#2a2a36;--dim:#5b5b6b;--base:#e9e9f0;--fill:#ff4f7b;--fill2:#ffb14f;--ko:#8ccfff;--accent:#3a6dff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--base);font:16px/1.5 system-ui,"Yu Gothic","Malgun Gothic",sans-serif;overflow:hidden}
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---- top bar: minimal, just a menu button + title + play control ---- */
+.topbar{display:flex;align-items:center;gap:8px;padding:8px 10px;flex:0 0 auto}
+.iconbtn{background:var(--panel);color:var(--base);border:1px solid var(--line);border-radius:10px;width:38px;height:38px;font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+.title{font-size:.85rem;color:#999;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+audio{height:32px;flex:1 1 260px;min-width:0}
+
+/* ---- stage: the part that matters, fills remaining space ---- */
+.stage{flex:1 1 auto;min-height:0;background:radial-gradient(ellipse at 50% 0%,#1b1030 0%,var(--bg) 70%);
+  display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:clamp(6px,2vh,16px);padding:6px 18px 14px;overflow:hidden}
+.lyricrow{min-height:1.4em;text-align:center;line-height:1.3}
+.lyricrow.row2{opacity:.88}
+.main{font-size:clamp(1.3rem,4vw,2.6rem);font-weight:700;letter-spacing:.02em}
+.sub{font-size:clamp(.85rem,2.1vw,1.2rem);margin-top:.25em;font-weight:600;letter-spacing:.01em}
+/* landscape phones: width is ample, height is the scarce resource -- size off vh instead */
+@media (orientation:landscape) and (max-height:520px){
+  .main{font-size:clamp(1.3rem,9vh,3rem)}
+  .sub{font-size:clamp(.8rem,4.2vh,1.4rem)}
+  .topbar{padding:4px 8px}
+  .iconbtn{width:32px;height:32px;font-size:1rem}
+  audio{height:26px}
+}
+.sub .ch .b{color:#b9b9c8}
+.ch{position:relative;display:inline-block;white-space:pre}
+.ch .f{position:absolute;left:0;top:0;width:0;overflow:hidden;white-space:pre;color:transparent;
+  background:linear-gradient(180deg,var(--fill2),var(--fill));-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:0}
+.ch .b{color:var(--base);text-shadow:0 2px 0 #000,0 0 10px #000}
+.gap{color:var(--dim);font-size:1.1rem;letter-spacing:.2em}
+.meta{flex:0 0 auto;padding:2px 14px 6px;font-size:.72rem;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
+
+/* ---- rotate-to-landscape hint (phones only; tablets/desktop never see it) ---- */
+.rotatehint{display:none}
+@media (orientation:portrait) and (max-width:600px){
+  .rotatehint{display:flex;align-items:center;gap:10px;background:#241a06;color:#ffd27a;font-size:.8rem;
+    padding:8px 14px;flex:0 0 auto}
+  .rotatehint svg{flex:0 0 auto;animation:rot 1.6s ease-in-out infinite}
+}
+@keyframes rot{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
+
+/* ---- settings drawer, anchored to the left of the lyrics ---- */
+.backdrop{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.backdrop.open{opacity:.55;pointer-events:auto}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--panel);border-right:1px solid var(--line);
+  z-index:21;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto;padding:16px 14px 24px;
+  padding-top:calc(16px + env(safe-area-inset-top));padding-left:calc(14px + env(safe-area-inset-left))}
+.drawer.open{transform:translateX(0)}
+.drawer h2{font-size:.95rem;margin:0 0 14px;color:#ccc}
+.drawer section{margin-bottom:20px}
+.drawer h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#777;margin:0 0 8px}
+select,button,input[type=range]{font:inherit;font-size:.9rem;background:#1c1c28;color:var(--base);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button.wide{width:100%;text-align:center;background:#1c2233;border-color:#3a4568;padding:10px}
+button.wide:active{background:#242c47}
+select.wide{width:100%}
+label.ctl{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#aaa;justify-content:space-between}
+input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+input[type=range]{padding:0;width:120px;cursor:pointer}
+
+/* ---- vertical scroll-snap key picker ---- */
+.keypicker{position:relative;height:150px;overflow-y:scroll;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;background:#101018}
+.keypicker::-webkit-scrollbar{width:0}
+.keypicker-pad{height:57px}
+.key-item{height:36px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;
+  font-size:1.05rem;color:#666;font-variant-numeric:tabular-nums}
+.key-item.center{color:var(--base);font-weight:700;font-size:1.25rem}
+.keypicker-line{position:absolute;top:50%;left:8px;right:8px;height:36px;transform:translateY(-50%);
+  border-top:1px solid #3a4568;border-bottom:1px solid #3a4568;pointer-events:none;border-radius:6px}
+.keyval{text-align:center;font-size:.8rem;color:#888;margin-top:6px}
+.qa{margin-top:8px;font-size:.72rem;color:#777;background:#0d0d13;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.qa summary{cursor:pointer;color:#999}
+</style>
+<div class="app">
+  <div class="rotatehint">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd27a" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
+    화면을 가로로 돌리면 가사가 더 크게 보여요
+  </div>
+  <div class="topbar">
+    <button class="iconbtn" id="menuBtn" type="button" aria-label="설정">☰</button>
+    <div class="title">__TITLE__</div>
+    <audio id="au" controls preload="auto"></audio>
+  </div>
+  <div class="stage">
+    <div class="lyricrow row1" id="row1"></div>
+    <div class="lyricrow row2" id="row2"></div>
+  </div>
+  <div class="meta"><span id="pos"></span><span id="lineinfo"></span></div>
+</div>
+<div class="backdrop" id="backdrop"></div>
+<div class="drawer" id="drawer">
+  <h2>설정</h2>
+  <section>
+    <h3>음원</h3>
+    <select class="wide" id="srcType"><option value="mr">MR (반주만)</option><option value="orig">원곡</option></select>
+  </section>
+  <section>
+    <h3>키 (스크롤로 선택)</h3>
+    <div class="keypicker" id="keyPicker"><div class="keypicker-line"></div><div id="keyTrack"></div></div>
+    <div class="keyval" id="keyVal">원키 (0)</div>
+    <div class="row" style="margin-top:10px">
+      <button class="wide" id="keyGender" type="button">남/여 전환</button>
+    </div>
+  </section>
+  <section>
+    <h3>가사 표시</h3>
+    <label class="ctl">크게 보이는 줄
+      <select id="primary"><option value="ko">한글 독음</option><option value="jp">일본어</option></select>
+    </label>
+  </section>
+  <section>
+    <h3>가이드 멜로디</h3>
+    <label class="ctl">켜기 <input type="checkbox" id="guideOn"></label>
+    <label class="ctl">음량 <input type="range" id="guideVol" min="0" max="0.4" step="0.02" value="0.12"></label>
+    <div class="keyval" id="pitchNote"></div>
+  </section>
+  <details class="qa"><summary>자동 처리 기록 (사람 검수 없이 생성)</summary><pre id="qa" style="white-space:pre-wrap;margin:8px 0 0"></pre></details>
+</div>
+<script>
+const DATA = __DATA__;
+const L = DATA.lines;
+document.getElementById('qa').textContent = DATA.qa || '';
+
+// ---------------------------------------------------------------- drawer open/close
+const drawer = document.getElementById('drawer'), backdrop = document.getElementById('backdrop'), menuBtn = document.getElementById('menuBtn');
+function setDrawer(open) { drawer.classList.toggle('open', open); backdrop.classList.toggle('open', open); }
+menuBtn.onclick = () => setDrawer(!drawer.classList.contains('open'));
+backdrop.onclick = () => setDrawer(false);
+
+// ---------------------------------------------------------------- audio source + key shift
+const au = document.getElementById('au'), srcType = document.getElementById('srcType');
+const ORIG = DATA.orig;             // {file, label}
+const SHIFTS = DATA.mrShifts || []; // [{semitone, file}], ascending
+let currentKey = 0;
+function currentSrc() {
+  if (srcType.value === 'orig') return ORIG.file;
+  const hit = SHIFTS.find(s => s.semitone === currentKey);
+  return hit ? hit.file : (SHIFTS.find(s => s.semitone === 0) || { file: ORIG.file }).file;
+}
+function switchAudio() {
+  const t = au.currentTime, playing = !au.paused, wanted = currentSrc();
+  if (au.getAttribute('data-src') === wanted) return;
+  au.setAttribute('data-src', wanted); au.src = wanted;
+  au.addEventListener('loadedmetadata', () => { au.currentTime = Math.min(t, au.duration || t); if (playing) au.play().catch(() => {}); }, { once: true });
+}
+srcType.onchange = switchAudio;
+function nearestShift(target) {
+  return SHIFTS.reduce((best, s) => Math.abs(s.semitone - target) < Math.abs(best - target) ? s.semitone : best, 0);
+}
+
+// ---- vertical scroll-snap key picker ----
+const keyTrack = document.getElementById('keyTrack'), keyPicker = document.getElementById('keyPicker'), keyVal = document.getElementById('keyVal');
+const ITEM_H = 36;
+keyTrack.innerHTML = `<div class="keypicker-pad"></div>` +
+  SHIFTS.map(s => `<div class="key-item" data-v="${s.semitone}">${s.semitone === 0 ? '0' : (s.semitone > 0 ? '+' + s.semitone : s.semitone)}</div>`).join('') +
+  `<div class="keypicker-pad"></div>`;
+const keyItems = [...keyTrack.querySelectorAll('.key-item')];
+let programmaticScroll = false;
+function scrollToKey(semitone) {
+  const idx = SHIFTS.findIndex(s => s.semitone === semitone);
+  if (idx < 0) return;
+  programmaticScroll = true;
+  keyPicker.scrollTop = idx * ITEM_H; // instant, not 'smooth' -- smooth + scroll-snap can settle on the wrong item
+  requestAnimationFrame(() => requestAnimationFrame(() => { programmaticScroll = false; }));
+}
+function applyKey(semitone, fromPicker) {
+  currentKey = semitone;
+  keyItems.forEach(el => el.classList.toggle('center', Number(el.dataset.v) === semitone));
+  keyVal.textContent = semitone === 0 ? '원키 (0)' : `${semitone > 0 ? '+' : ''}${semitone}반음`;
+  if (!fromPicker) scrollToKey(semitone);
+  if (srcType.value !== 'orig') srcType.value = 'mr';
+  switchAudio();
+  genderShifted = semitone !== 0 && semitone === nearestShift(OPPOSITE_SHIFT);
+  genderBtn.textContent = genderShifted ? '원곡 키로 전환' : `${OPPOSITE_LABEL} 키로 전환`;
+}
+let keyScrollTimer = null;
+keyPicker.addEventListener('scroll', () => {
+  if (programmaticScroll) return;
+  clearTimeout(keyScrollTimer);
+  keyScrollTimer = setTimeout(() => {
+    const idx = Math.round(keyPicker.scrollTop / ITEM_H);
+    const s = SHIFTS[Math.max(0, Math.min(SHIFTS.length - 1, idx))];
+    if (s && s.semitone !== currentKey) applyKey(s.semitone, true);
+  }, 120);
+});
+
+// "성별 전환" toggles between the song's own key and the OPPOSITE register, not a fixed
+// male/female pair -- a female-default song goes original -> male -> original, and a
+// male-default song goes original -> female -> original. originGender is a rough guess
+// from the guide-melody's median pitch (pitch_guide.classify_gender); if it's missing,
+// default to shifting down (the more common "낮춰 부르기" direction).
+const ORIGIN_GENDER = DATA.originGender; // 'male' | 'female' | null
+const OPPOSITE_LABEL = ORIGIN_GENDER === 'male' ? '여성' : '남성';
+const OPPOSITE_SHIFT = ORIGIN_GENDER === 'male' ? 4 : -4;
+const genderBtn = document.getElementById('keyGender');
+let genderShifted = false;
+genderBtn.textContent = `${OPPOSITE_LABEL} 키로 전환`;
+genderBtn.onclick = () => { genderShifted = !genderShifted; applyKey(genderShifted ? nearestShift(OPPOSITE_SHIFT) : 0, false); };
+applyKey(0, false);
+scrollToKey(0);
+switchAudio();
+
+// ---------------------------------------------------------------- pitch guide tone (melody only, not the vocal audio)
+const PITCH = DATA.pitch; // {hopSec, hz:[...]} or null
+const guideOn = document.getElementById('guideOn'), guideVol = document.getElementById('guideVol');
+const pitchNote = document.getElementById('pitchNote');
+if (!PITCH || !PITCH.hz || !PITCH.hz.length) { guideOn.disabled = true; guideVol.disabled = true; pitchNote.textContent = '가이드 멜로디 없음'; }
+// reed-instrument-ish tone (sax/brass character), not a plain sine drone: two slightly
+// detuned sawtooth oscillators (gives body/beating) through a resonant lowpass (gives the
+// "buzzy reed" edge) plus a light vibrato -- all native WebAudio nodes, no samples.
+let actx = null, osc = null, osc2 = null, filt = null, vibLFO = null, vibGain = null, gain = null;
+function ensureGuideGraph() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  osc = actx.createOscillator(); osc.type = 'sawtooth';
+  osc2 = actx.createOscillator(); osc2.type = 'sawtooth'; osc2.detune.value = 9;
+  filt = actx.createBiquadFilter(); filt.type = 'lowpass'; filt.Q.value = 2.2; filt.frequency.value = 1200;
+  vibLFO = actx.createOscillator(); vibLFO.type = 'sine'; vibLFO.frequency.value = 5.3;
+  vibGain = actx.createGain(); vibGain.gain.value = 3.5; // +-3.5Hz vibrato depth
+  gain = actx.createGain(); gain.gain.value = 0;
+  vibLFO.connect(vibGain); vibGain.connect(osc.frequency); vibGain.connect(osc2.frequency);
+  osc.connect(filt); osc2.connect(filt); filt.connect(gain); gain.connect(actx.destination);
+  osc.frequency.value = osc2.frequency.value = 220;
+  osc.start(); osc2.start(); vibLFO.start();
+}
+guideOn.addEventListener('change', () => { if (guideOn.checked) ensureGuideGraph(); });
+au.addEventListener('play', () => { if (guideOn.checked) ensureGuideGraph(); if (actx && actx.state === 'suspended') actx.resume(); });
+function pitchAt(t) {
+  if (!PITCH || !PITCH.hz.length) return 0;
+  const i = Math.round(t / PITCH.hopSec);
+  return i >= 0 && i < PITCH.hz.length ? PITCH.hz[i] : 0;
+}
+function updateGuide(t) {
+  if (!actx) return;
+  const on = guideOn.checked && !au.paused;
+  const hz = on ? pitchAt(t) : 0;
+  const now = actx.currentTime;
+  if (hz > 0) {
+    osc.frequency.setTargetAtTime(hz, now, 0.03);
+    osc2.frequency.setTargetAtTime(hz, now, 0.03);
+    filt.frequency.setTargetAtTime(Math.min(4200, Math.max(900, hz * 5)), now, 0.05);
+  }
+  gain.gain.setTargetAtTime(hz > 0 ? Number(guideVol.value) : 0, now, hz > 0 ? 0.02 : 0.08);
+}
+
+// ---------------------------------------------------------------- lyric rows (two-line rolling display, like a hardware karaoke screen)
+let primary = 'ko';
+document.getElementById('primary').onchange = e => { primary = e.target.value; builtKey = null; };
+
+// fill timing holes (punctuation, spaces, unaligned chars) from neighbours so the wipe never stalls
+for (const l of L) {
+  for (const arr of [l.chars, l.ko || []]) {
+    let last = l.start ?? 0;
+    for (const c of arr) { if (c.s == null) { c.s = last; c.e = last; } last = c.e ?? last; }
+  }
+}
+const LEAD = 1.2, GAP_SHOW = 4.0;
+
+function spans(arr) {
+  return arr.map(c => `<span class="ch"><span class="b">${esc(c.c)}</span><span class="f">${esc(c.c)}</span></span>`).join('');
+}
+function rowsFor(i) {
+  const l = L[i]; if (!l) return [[], []];
+  const ko = l.ko && l.ko.length ? l.ko : null;
+  if (!ko) return [l.chars, []];
+  return primary === 'ko' ? [ko, l.chars] : [l.chars, ko];
+}
+function lineHTML(i) {
+  if (!L[i]) return { html: '', main: [], sub: [] };
+  const [p, s] = rowsFor(i);
+  return { html: `<div class="main">${spans(p)}</div>` + (s.length ? `<div class="sub">${spans(s)}</div>` : ''), main: p, sub: s };
+}
+function esc(s) { return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+
+const row1El = document.getElementById('row1'), row2El = document.getElementById('row2');
+let builtKey = null, fills = [];
+
+function activeIndex(t) {
+  // last line whose start (minus lead-in) has already passed
+  let i = -1;
+  for (let k = 0; k < L.length; k++) { if (L[k].start != null && L[k].start - LEAD <= t) i = k; else if (L[k].start != null && L[k].start - LEAD > t) break; }
+  return i;
+}
+function pick(t) {
+  // Two lines are shown as a fixed pair (even index on top, odd below), like a hardware
+  // karaoke screen: both stay lit together -- the top line holds fully coloured once done,
+  // the bottom keeps filling -- and the pair only changes once BOTH are finished and the
+  // next pair is due. A very long silence in between shows an interlude marker instead.
+  const i = activeIndex(t);
+  if (i < 0) return { top: -1, bottom: 0, gap: 'intro' };
+  const top = i - (i % 2), bottom = top + 1;
+  const bottomLine = L[bottom];
+  const pairEnd = bottomLine ? bottomLine.end : L[top].end;
+  if (t > pairEnd + 0.8) {
+    const nextTop = bottom + 1;
+    const nx = L[nextTop];
+    if (!nx) return { top, bottom: bottomLine ? bottom : -1, gap: bottomLine ? null : 'end' };
+    if (nx.start - t > GAP_SHOW) return { top: -1, bottom: nextTop, gap: 'interlude' };
+    // next pair's lead-in window has started but activeIndex() won't reach it until its own
+    // start-LEAD passes; jump the display ahead so the pair still switches together
+    if (nx.start - LEAD <= t) return { top: nextTop, bottom: nextTop + 1 };
+  }
+  return { top, bottom: bottomLine ? bottom : -1 };
+}
+
+function buildRow(el, index, marker) {
+  if (marker) { el.innerHTML = `<span class="gap">♪ ${marker} ♪</span>`; return []; }
+  const { html, main, sub } = lineHTML(index);
+  el.innerHTML = html;
+  const fp = [...el.querySelectorAll('.main .ch .f')], fs = [...el.querySelectorAll('.sub .ch .f')];
+  const out = [];
+  fp.forEach((e, k) => out.push([e, main[k]])); fs.forEach((e, k) => out.push([e, sub[k]]));
+  return out;
+}
+
+function frame() {
+  const t = au.currentTime, st = pick(t);
+  const key = `${st.top}|${st.bottom}|${st.gap || ''}`;
+  if (key !== builtKey) {
+    const marker = st.top < 0 ? (st.gap === 'intro' ? (t < 1 ? null : '전주') : '간주') : null;
+    const f1 = buildRow(row1El, st.top, marker);
+    const f2 = st.bottom >= 0 ? buildRow(row2El, st.bottom, null) : (row2El.innerHTML = '', []);
+    fills = [...f1, ...f2];
+    builtKey = key;
+  }
+  for (const [el, c] of fills) {
+    if (!c || c.s == null) continue;
+    const d = Math.max(0.001, c.e - c.s);
+    const f = t <= c.s ? 0 : t >= c.e ? 1 : (t - c.s) / d;
+    el.style.width = (f * 100).toFixed(1) + '%';
+  }
+  updateGuide(t);
+  document.getElementById('pos').textContent = `${fmt(t)} / ${fmt(au.duration || DATA.durationSec)}`;
+  document.getElementById('lineinfo').textContent = st.top >= 0 ? `${st.top + 1} / ${L.length}줄` : '';
+}
+function fmt(s) { s = s || 0; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; }
+setInterval(frame, 30);
+</script>
+</html>

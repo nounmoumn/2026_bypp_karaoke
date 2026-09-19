@@ -1,0 +1,6 @@
+demucs==4.1.0
+whisperx==3.8.6
+soundfile
+scipy
+pykakasi
+yt-dlp[default]

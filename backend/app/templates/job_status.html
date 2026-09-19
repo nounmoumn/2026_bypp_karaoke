@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>처리 중 — BYPP</title>
+<style>
+:root{--bg:#07070c;--panel:#14141d;--line:#2a2a36;--base:#e9e9f0;--dim:#7a7a8a;--ok:#4ade80;--err:#ff8080}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--base);font:16px/1.5 system-ui,"Yu Gothic","Malgun Gothic",sans-serif;padding:20px 16px 40px;max-width:720px;margin-inline:auto}
+h1{font-size:1.2rem;margin:0 0 4px}
+.state{font-size:.9rem;margin-bottom:14px}
+.state.running{color:#ffd27a}
+.state.done{color:var(--ok)}
+.state.error{color:var(--err)}
+pre{background:#0d0d13;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.78rem;line-height:1.45;max-height:60vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+a.btn{display:inline-block;margin-top:16px;padding:10px 16px;background:#2a5bd7;color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
+a.back{color:var(--dim);font-size:.85rem;text-decoration:none}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #444;border-top-color:#ffd27a;border-radius:50%;animation:sp .8s linear infinite;margin-right:6px;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+<a class="back" href="/">← 곡 목록</a>
+<h1 id="titleEl">{{ song_id }}</h1>
+<div class="state" id="stateEl">불러오는 중…</div>
+<pre id="logEl"></pre>
+<div id="doneArea"></div>
+<script>
+const songId = {{ song_id | tojson }};
+let done = false;
+async function poll() {
+  if (done) return;
+  try {
+    const res = await fetch('/api/jobs/' + encodeURIComponent(songId) + '/status');
+    if (res.status === 404) { document.getElementById('stateEl').textContent = '작업을 찾을 수 없습니다.'; return; }
+    const s = await res.json();
+    const stateEl = document.getElementById('stateEl');
+    document.getElementById('titleEl').textContent = s.title || songId;
+    document.getElementById('logEl').textContent = s.log || '';
+    document.getElementById('logEl').scrollTop = document.getElementById('logEl').scrollHeight;
+    if (s.state === 'running') {
+      stateEl.className = 'state running'; stateEl.innerHTML = '<span class="spinner"></span>처리 중… (보통 2~4분)';
+    } else if (s.state === 'done') {
+      stateEl.className = 'state done'; stateEl.textContent = '완료';
+      document.getElementById('doneArea').innerHTML = '<a class="btn" href="/song/' + encodeURIComponent(songId) + '">플레이어로 이동</a>';
+      done = true;
+    } else if (s.state === 'error') {
+      stateEl.className = 'state error'; stateEl.textContent = '실패했습니다. 아래 기록을 확인하세요.';
+      done = true;
+    }
+  } catch (e) { /* transient fetch error; keep polling */ }
+  if (!done) setTimeout(poll, 2000);
+}
+poll();
+</script>
+</html>
